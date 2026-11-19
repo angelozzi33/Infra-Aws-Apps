@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(cdk synth:*)",
+      "Bash(cdk diff:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(powershell -File scripts/implantar-sandbox.ps1:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(cdk deploy:*)",
+      "Bash(cdk destroy:*)",
+      "Bash(cdk bootstrap:*)",
+      "Bash(aws iam:*)",
+      "Bash(aws organizations:*)",
+      "Bash(aws sts assume-role:*)",
+      "Bash(aws cloudformation delete-stack:*)",
+      "Bash(aws s3 rm:*)",
+      "Bash(aws dynamodb delete-table:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Edit(app.json)",
+      "Write(app.json)",
+      "Read(**/.env)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/validar-antes-do-commit.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}
