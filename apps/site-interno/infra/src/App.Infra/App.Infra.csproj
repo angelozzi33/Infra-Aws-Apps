@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Amazon.CDK.Lib" />
+    <PackageReference Include="Constructs" />
+    <PackageReference Include="Cdklabs.CdkNag" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Biblioteca da plataforma: pacote NuGet publicado pelo repositório Infra-Aws no GitHub Packages
+         (versão fixada no Directory.Packages.props da raiz; fonte no nuget.config). ADR-026. -->
+    <PackageReference Include="Marutech.InfraAws.Cdk" />
+  </ItemGroup>
+</Project>

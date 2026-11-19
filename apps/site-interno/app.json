@@ -1,0 +1,11 @@
+{
+  "nome": "site-interno",
+  "dono": "fangelozzi-usuario",
+  "centroCusto": "FIN-002",
+  "departamento": "financeiro",
+  "criticidade": "Departamental",
+  "classificacao": "Interna",
+  "padrao": "SiteInterno",
+  "solicitacao": "SOL-0002",
+  "orcamentoMensalUsd": 1
+}
