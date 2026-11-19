@@ -3,7 +3,8 @@
 #   prod → logo depois do dev, mas ESPERA a liberação (environment "producao"). Com a ADR-027, quem
 #          libera é o gestor no Portal Infra-Aws (o GitHub App do Portal é a regra de proteção do
 #          environment); sem ela, "Required reviewers". A role de prod só aceita tokens desse environment.
-#          O Portal identifica as apps pelo nome do job: mantenha "prod (<app>)".
+#          O Portal identifica as apps pelo nome do job: mantenha "dev (<app>)" e "prod (<app>)".
+#          A URL do environment (saída UrlSite) é enviada ao Portal pelo GitHub (ADR-028).
 # Também pode ser disparado à mão (Actions → Run workflow) para uma aplicação.
 # Repositório público: IDs de conta mascarados nos logs.
 name: Deploy das aplicações
@@ -69,10 +70,13 @@ jobs:
           echo "Aplicações a implantar: $json"
 
   dev:
+    name: dev (${{ matrix.app }})   # contrato com o Portal (ADR-028): não renomeie
     needs: detectar
     if: needs.detectar.outputs.configurado == 'true' && needs.detectar.outputs.apps != '[]'
     runs-on: ubuntu-latest
-    environment: desenvolvimento
+    environment:
+      name: desenvolvimento
+      url: ${{ steps.deploy.outputs.url }}   # endereço da app: aparece no GitHub e no Portal (ADR-028)
     permissions:
       contents: read
       packages: read
@@ -105,17 +109,24 @@ jobs:
           aws-region: us-east-1
           mask-aws-account-id: true
       - name: cdk deploy (dev)
+        id: deploy
         working-directory: apps/${{ matrix.app }}/infra
         env:
           EMAIL_ALERTAS: ${{ vars.EMAIL_ALERTAS }}
-        run: cdk deploy --require-approval never -c ambiente=dev -c "emailAlerta=$EMAIL_ALERTAS"
+        run: |
+          cdk deploy --require-approval never -c ambiente=dev -c "emailAlerta=$EMAIL_ALERTAS" --outputs-file saidas.json
+          # Saída "UrlSite" da stack (o CDK põe prefixo/sufixo no nome, por isso o "contains").
+          url=$(jq -r '[.[] | to_entries[] | select(.key | contains("UrlSite")) | .value][0] // empty' saidas.json)
+          if [[ "$url" =~ ^https://[A-Za-z0-9.-]+$ ]]; then echo "url=$url" >> "$GITHUB_OUTPUT"; fi
 
   prod:
     name: prod (${{ matrix.app }})   # contrato com o Portal (ADR-027): não renomeie
     needs: [detectar, dev]
     if: needs.detectar.outputs.configurado == 'true' && needs.detectar.outputs.apps != '[]'
     runs-on: ubuntu-latest
-    environment: producao   # regra de proteção (Portal, ADR-027): o job espera a liberação do gestor
+    environment:   # regra de proteção (Portal, ADR-027): o job espera a liberação do gestor
+      name: producao
+      url: ${{ steps.deploy.outputs.url }}   # endereço da app: aparece no GitHub e no Portal (ADR-028)
     permissions:
       contents: read
       packages: read
@@ -147,7 +158,12 @@ jobs:
           aws-region: us-east-1
           mask-aws-account-id: true
       - name: cdk deploy (prod)
+        id: deploy
         working-directory: apps/${{ matrix.app }}/infra
         env:
           EMAIL_ALERTAS: ${{ vars.EMAIL_ALERTAS }}
-        run: cdk deploy --require-approval never -c ambiente=prod -c "emailAlerta=$EMAIL_ALERTAS"
+        run: |
+          cdk deploy --require-approval never -c ambiente=prod -c "emailAlerta=$EMAIL_ALERTAS" --outputs-file saidas.json
+          # Saída "UrlSite" da stack (o CDK põe prefixo/sufixo no nome, por isso o "contains").
+          url=$(jq -r '[.[] | to_entries[] | select(.key | contains("UrlSite")) | .value][0] // empty' saidas.json)
+          if [[ "$url" =~ ^https://[A-Za-z0-9.-]+$ ]]; then echo "url=$url" >> "$GITHUB_OUTPUT"; fi
