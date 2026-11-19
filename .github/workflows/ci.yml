@@ -1,0 +1,120 @@
+# Pipeline de PR das aplicações: testes, synth (cdk-nag + regras da plataforma) e cdk diff comentado.
+# Nenhum job deste arquivo implanta: a role de leitura só assume a lookup role do CDK.
+#
+# Repositório PÚBLICO (ADR-026):
+#  - PRs de fork NÃO recebem token OIDC nem segredos; o job "diff" só roda para branches deste repositório.
+#  - Nunca usar o gatilho pull_request_target (ele roda código de fork com permissões do repositório).
+#  - IDs de conta AWS são mascarados nos logs (que são públicos).
+name: CI (pull request)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  CDK_DISABLE_VERSION_CHECK: "1"
+  VERSAO_CDK: "2.1148.1"
+
+jobs:
+  testes-e-synth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read        # ler a biblioteca Marutech.InfraAws.Cdk no GitHub Packages
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Instalar CDK CLI (versão fixa)
+        run: npm install -g aws-cdk@${VERSAO_CDK}
+      - name: Autenticar no GitHub Packages (biblioteca da plataforma)
+        run: dotnet nuget update source infra-aws --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --configfile nuget.config
+
+      - name: Testes do template e das aplicações
+        run: |
+          set -e
+          for t in template-app/backend/tests/*/ apps/*/backend/tests/*/; do
+            [ -d "$t" ] || continue
+            echo "::group::dotnet test $t"; dotnet test "$t" --nologo; echo "::endgroup::"
+          done
+
+      - name: cdk synth (falha se violar normas ou cdk-nag)
+        run: |
+          set -e
+          for d in template-app/infra apps/*/infra; do
+            [ -f "$d/cdk.json" ] || continue
+            echo "::group::cdk synth $d"
+            (cd "$d" && cdk synth -q -c ambiente=dev)
+            echo "::endgroup::"
+          done
+
+  diff:
+    # Só com a conta dev configurada e só para branches DESTE repositório (fork não recebe token OIDC).
+    if: vars.AWS_CONTA_DEV != '' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: testes-e-synth
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+      id-token: write       # OIDC: troca o token do GitHub por credenciais temporárias da AWS
+      pull-requests: write  # comentar o diff no PR
+    steps:
+      - name: Mascarar IDs de conta nos logs (repositório público)
+        env:
+          CONTA_DEV: ${{ vars.AWS_CONTA_DEV }}
+        run: echo "::add-mask::$CONTA_DEV"
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: npm install -g aws-cdk@${VERSAO_CDK}
+      - name: Autenticar no GitHub Packages
+        run: dotnet nuget update source infra-aws --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --configfile nuget.config
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_CONTA_DEV }}:role/infra-aws-plataforma-github-leitura
+          aws-region: us-east-1
+          mask-aws-account-id: true
+      - name: cdk diff das aplicações alteradas
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          apps=$(git diff --name-only "origin/$BASE...HEAD" | grep '^apps/' | cut -d/ -f2 | sort -u || true)
+          echo "## cdk diff (dev)" > diff.md
+          if [ -z "$apps" ]; then echo "Nenhuma aplicação alterada neste PR." >> diff.md; fi
+          for app in $apps; do
+            [[ "$app" =~ ^[a-z][a-z0-9-]{2,29}$ ]] || continue
+            [ -f "apps/$app/infra/cdk.json" ] || continue
+            echo "### $app" >> diff.md
+            echo '```diff' >> diff.md
+            (cd "apps/$app/infra" && cdk diff --no-change-set -c ambiente=dev 2>&1 | tail -n 300) >> diff.md || true
+            echo '```' >> diff.md
+          done
+          # O comentário é público: troca o ID da conta por um marcador.
+          sed -i "s/${{ vars.AWS_CONTA_DEV }}/<conta-dev>/g" diff.md
+      - name: Comentar no PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const corpo = fs.readFileSync('diff.md', 'utf8').slice(0, 60000);
+            await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body: corpo });

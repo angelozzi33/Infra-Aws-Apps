@@ -1,0 +1,18 @@
+cdk.out/
+bin/
+obj/
+.vs/
+*.user
+__pycache__/
+# CDK: contexto local pode conter account IDs reais — nunca versionar
+cdk.context.json
+# Saída de testes e pacotes
+TestResults/
+*.nupkg
+artefatos/
+# Configuração local de implantação (e-mails, IDs de conta)
+configuracao.local.ps1
+
+# Chaves privadas (ex.: GitHub App) nunca vão para o Git
+*.pem
+*.key

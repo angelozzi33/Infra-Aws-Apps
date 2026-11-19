@@ -1,0 +1,11 @@
+{
+  "nome": "relatorio-despesas",
+  "dono": "usuario-piloto",
+  "centroCusto": "FIN-002",
+  "departamento": "financeiro",
+  "criticidade": "Departamental",
+  "classificacao": "Interna",
+  "padrao": "AppWebDados",
+  "solicitacao": "SOL-0001",
+  "orcamentoMensalUsd": 3
+}

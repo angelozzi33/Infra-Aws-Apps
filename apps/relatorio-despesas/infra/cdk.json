@@ -1,0 +1,9 @@
+{
+  "app": "dotnet run --project src/App.Infra/App.Infra.csproj",
+  "context": {
+    "ambiente": "sandbox",
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:target-partitions": ["aws"]
+  }
+}
