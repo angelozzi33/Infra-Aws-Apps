@@ -1,0 +1,11 @@
+{
+  "nome": "exemplo-app",
+  "dono": "plataforma",
+  "centroCusto": "PLT-000",
+  "departamento": "plataforma",
+  "criticidade": "Departamental",
+  "classificacao": "Interna",
+  "padrao": "AppWebDados",
+  "solicitacao": "SOL-0000",
+  "orcamentoMensalUsd": 5
+}

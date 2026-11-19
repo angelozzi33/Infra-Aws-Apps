@@ -1,0 +1,33 @@
+<Project>
+  <!--
+    Gestão central de versões de pacotes NuGet (Central Package Management).
+    Todas as versões ficam fixadas aqui: atualizar = um PR neste arquivo, revisado.
+    Versões fixas evitam que um build pegue, sem revisão, um pacote novo (risco de cadeia de suprimentos).
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Biblioteca da plataforma (GitHub Packages do repositório Infra-Aws). Atualizar = PR aqui. -->
+    <PackageVersion Include="Marutech.InfraAws.Cdk" Version="0.1.0" />
+    <!-- Infraestrutura -->
+    <PackageVersion Include="Amazon.CDK.Lib" Version="2.277.0" />
+    <PackageVersion Include="Constructs" Version="10.8.1" />
+    <PackageVersion Include="Cdklabs.CdkNag" Version="2.38.2" />
+    <!-- Lambdas -->
+    <PackageVersion Include="Amazon.Lambda.Core" Version="3.4.0" />
+    <PackageVersion Include="Amazon.Lambda.Serialization.SystemTextJson" Version="3.0.1" />
+    <PackageVersion Include="Amazon.Lambda.APIGatewayEvents" Version="3.0.1" />
+    <PackageVersion Include="AWSSDK.DynamoDBv2" Version="4.1.0.2" />
+    <PackageVersion Include="AWSSDK.StepFunctions" Version="4.1.0.2" />
+    <PackageVersion Include="AWSSDK.SimpleEmailV2" Version="4.1.0.2" />
+    <PackageVersion Include="AWSSDK.CognitoIdentityProvider" Version="4.1.2.1" />
+    <PackageVersion Include="AWSSDK.SimpleSystemsManagement" Version="4.1.1.2" />
+    <PackageVersion Include="AWSSDK.CostExplorer" Version="4.1.0.2" />
+    <PackageVersion Include="AWSSDK.SecurityToken" Version="4.1.0.2" />
+    <!-- Testes -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>
