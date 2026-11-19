@@ -80,10 +80,13 @@ jobs:
       matrix:
         app: ${{ fromJson(needs.detectar.outputs.apps) }}
     steps:
-      - name: Mascarar IDs de conta nos logs (repositório público)
+      - name: Mascarar IDs de conta e e-mail nos logs (repositório público)
         env:
           CONTA: ${{ vars.AWS_CONTA_DEV }}
-        run: echo "::add-mask::$CONTA"
+          EMAIL: ${{ vars.EMAIL_ALERTAS }}
+        run: |
+          echo "::add-mask::$CONTA"
+          [ -n "$EMAIL" ] && echo "::add-mask::$EMAIL" || true
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
         with:
@@ -119,10 +122,13 @@ jobs:
       matrix:
         app: ${{ fromJson(needs.detectar.outputs.apps) }}
     steps:
-      - name: Mascarar IDs de conta nos logs (repositório público)
+      - name: Mascarar IDs de conta e e-mail nos logs (repositório público)
         env:
           CONTA: ${{ vars.AWS_CONTA_PROD }}
-        run: echo "::add-mask::$CONTA"
+          EMAIL: ${{ vars.EMAIL_ALERTAS }}
+        run: |
+          echo "::add-mask::$CONTA"
+          [ -n "$EMAIL" ] && echo "::add-mask::$EMAIL" || true
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
         with:
