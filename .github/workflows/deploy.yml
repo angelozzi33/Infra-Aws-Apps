@@ -1,8 +1,9 @@
 # Deploy das aplicações (ADR-026):
 #   dev  → automático após o merge na main (environment "desenvolvimento")
-#   prod → logo depois do dev, mas ESPERA a aprovação de um revisor (environment "producao" com
-#          "Required reviewers", disponível em repositório público). A role de prod só aceita tokens
-#          desse environment.
+#   prod → logo depois do dev, mas ESPERA a liberação (environment "producao"). Com a ADR-027, quem
+#          libera é o gestor no Portal Infra-Aws (o GitHub App do Portal é a regra de proteção do
+#          environment); sem ela, "Required reviewers". A role de prod só aceita tokens desse environment.
+#          O Portal identifica as apps pelo nome do job: mantenha "prod (<app>)".
 # Também pode ser disparado à mão (Actions → Run workflow) para uma aplicação.
 # Repositório público: IDs de conta mascarados nos logs.
 name: Deploy das aplicações
@@ -110,10 +111,11 @@ jobs:
         run: cdk deploy --require-approval never -c ambiente=dev -c "emailAlerta=$EMAIL_ALERTAS"
 
   prod:
+    name: prod (${{ matrix.app }})   # contrato com o Portal (ADR-027): não renomeie
     needs: [detectar, dev]
     if: needs.detectar.outputs.configurado == 'true' && needs.detectar.outputs.apps != '[]'
     runs-on: ubuntu-latest
-    environment: producao   # "Required reviewers" neste environment: o job espera a aprovação
+    environment: producao   # regra de proteção (Portal, ADR-027): o job espera a liberação do gestor
     permissions:
       contents: read
       packages: read
