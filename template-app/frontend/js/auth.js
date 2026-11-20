@@ -28,7 +28,10 @@ export async function entrar() {
   url.search = new URLSearchParams({
     response_type: 'code', client_id: config.clientId, redirect_uri: redirectUri(),
     scope: 'openid email profile', code_challenge_method: 'S256', code_challenge: desafio, state: estado,
-    lang: 'pt-BR'   // tela de login (managed login) em português (ADR-033 da plataforma)
+    lang: 'pt-BR',   // tela de login (managed login) em português (ADR-033 da plataforma)
+    // Exige senha + MFA a cada sessão nova. Sem isso, o cookie do login do Cognito (~1 h)
+    // entraria sem pedir nada depois de fechar o navegador.
+    prompt: 'login'
   });
   location.assign(url.toString());
 }
