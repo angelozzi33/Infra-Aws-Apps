@@ -27,7 +27,8 @@ export async function entrar() {
   const url = new URL(config.urlLogin + '/oauth2/authorize');
   url.search = new URLSearchParams({
     response_type: 'code', client_id: config.clientId, redirect_uri: redirectUri(),
-    scope: 'openid email profile', code_challenge_method: 'S256', code_challenge: desafio, state: estado
+    scope: 'openid email profile', code_challenge_method: 'S256', code_challenge: desafio, state: estado,
+    lang: 'pt-BR'   // tela de login (managed login) em português (ADR-033 da plataforma)
   });
   location.assign(url.toString());
 }
